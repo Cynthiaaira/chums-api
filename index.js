@@ -1,6 +1,8 @@
 const express = require('express');
 const mysql   = require('mysql2');
 const cors    = require('cors');
+const nodemailer = require('nodemailer');
+const crypto = require ('crypto');
 
 const app = express();
 app.use(cors());
@@ -21,7 +23,14 @@ db.connect((err) => {
     console.log('Connected to MySQL');
   }
 });
-
+/// mailer configuration
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'cynthiakaira02@gmailcom',
+    pass: 'nfbc prfp bkcv hyni'
+  }
+});
 // ── Users ────────────────────────────────────────────
 app.get('/users', (req, res) => {
   db.query('SELECT * FROM users', (err, results) => {
@@ -157,6 +166,60 @@ app.post('/auth/login', (req, res) => {
     }
   );
 });
+/// forgot password
+app.post('/auth/sorgot-password', (req, res) =>{
+  const {email} = req.body;
+  const token =crypto.randomBytes(20).toString('hex');
+// update user with token and 1 hour expiry
+const sql ='UPDATE users SET resetToken =?, resetTokenExpiry = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE email = ?';
+
+db.query(sql, [token, email], (err, result) => {
+  if(err) return res.status(500).json({error: err.message});
+  if(result.affectedRows === 0) return res.status(404).json({error: "User not found"});
+
+  const resetLink = `https://chums-api-production.up.railway.app/reset/${token}`;
+
+    const mailOptions = {
+      from: '"CHUMS System" <your-email@gmail.com>',
+      to: email,
+      subject: 'Password Reset Request',
+      text: `You requested a password reset. Click the link to reset your password: ${resetLink}`
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) return res.status(500).json({ error: error.message });
+      res.json({ message: 'Reset link sent to email' });
+    });
+});
+});
+///reset password- updated
+app.post('/auth/reset-password', (req, res) => {
+  const { token, newPassword } = req.body;
+
+  const sql = 'UPDATE users SET password = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE resetToken = ? AND resetTokenExpiry > NOW()';
+  
+  db.query(sql, [newPassword, token], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0) return res.status(400).json({ error: "Token invalid or expired" });
+    
+    res.json({ success: true, message: "Password updated successfully" });
+  });
+});
+
+/// existiing log in route
+app.post('/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  db.query(
+    'SELECT * FROM users WHERE email = ? AND password = ?',
+    [email, password],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (results.length === 0) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      res.json(results[0]);
+    }
+  );
+} );
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0' ,() => console.log(`CHUMS API running on port ${PORT}`));
