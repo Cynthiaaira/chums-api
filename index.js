@@ -152,7 +152,7 @@ app.put('/tasks/:id', (req, res) => {
   );
 });
 
-// ── Auth ─────────────────────────────────────────────
+//  Auth
 app.post('/auth/login', (req, res) => {
   const { username, password } = req.body;
 
@@ -233,7 +233,7 @@ app.post('/auth/register', (req, res) => {
   const staffId = 'CH-' + Math.floor(1000 + Math.random() * 9000);
 
   const sql = `
-    INSERT INTO users (name, email, password, role, staffId)
+    INSERT INTO user (name, email, password, role, staffId)
     VALUES (?, ?, ?, ?, ?)
   `;
 
