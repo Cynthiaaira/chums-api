@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host:     process.env.MYSQLHOST,
   port:     process.env.MYSQLPORT,
   database: process.env.MYSQLDATABASE,
@@ -27,7 +27,7 @@ db.connect((err) => {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'cynthiakaira02@gmailcom',
+    user: 'cynthiakaira02@gmail.com',
     pass: 'nfbc prfp bkcv hyni'
   }
 });
@@ -153,21 +153,25 @@ app.put('/tasks/:id', (req, res) => {
 
 // ── Auth ─────────────────────────────────────────────
 app.post('/auth/login', (req, res) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
+
   db.query(
-    'SELECT * FROM users WHERE email = ? AND password = ?',
-    [email, password],
+    'SELECT * FROM users WHERE name = ? AND password = ?',
+    [username, password],
     (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
+
       if (results.length === 0) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
+
       res.json(results[0]);
     }
   );
 });
+
 /// forgot password
-app.post('/auth/sorgot-password', (req, res) =>{
+app.post('/auth/forgot-password', (req, res) =>{
   const {email} = req.body;
   const token =crypto.randomBytes(20).toString('hex');
 // update user with token and 1 hour expiry
@@ -209,12 +213,13 @@ app.post('/auth/reset-password', (req, res) => {
 app.post('/auth/register', (req, res) => {
   const { name, email, password, inviteCode } = req.body;
 
-  // Smart Role Mapping
   const roleMap = {
     'CH-TAILOR': 'Tailor',
     'CH-ADMIN': 'Admin',
     'CH-DELIVERY': 'Delivery',
-    'CH-EMB': 'Embroidery'
+    'CH-EMB': 'Embroidery',
+    'CH-SALES': 'Sales',
+    'CH-PACK': 'Packaging'
   };
 
   const assignedRole = roleMap[inviteCode.toUpperCase()];
@@ -223,10 +228,22 @@ app.post('/auth/register', (req, res) => {
     return res.status(400).json({ error: "Invalid Staff Invitation Code" });
   }
 
-  const sql = 'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)';
-  db.query(sql, [name, email, password, assignedRole], (err, result) => {
+  // Generate Staff ID automatically
+  const staffId = 'CH-' + Math.floor(1000 + Math.random() * 9000);
+
+  const sql = `
+    INSERT INTO users (name, email, password, role, staffId)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql, [name, email, password, assignedRole, staffId], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true, role: assignedRole });
+
+    res.json({
+      success: true,
+      role: assignedRole,
+      staffId: staffId
+    });
   });
 });
 
