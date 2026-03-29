@@ -16,11 +16,12 @@ const db = mysql.createPool({
   password: process.env.MYSQLPASSWORD,
 });
 
-db.connect((err) => {
-  if (err) {
-    console.error('DB connection failed:', err);
-  } else {
+db.getConnection((err, connection) => {
+  if(err) {
+    console.err('Database connection failed', err);
+  } else{
     console.log('Connected to MySQL');
+    connection.release();
   }
 });
 /// mailer configuration
