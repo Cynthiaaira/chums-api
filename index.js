@@ -206,20 +206,29 @@ app.post('/auth/reset-password', (req, res) => {
 });
 
 /// existiing log in route
-app.post('/auth/login', (req, res) => {
-  const { email, password } = req.body;
-  db.query(
-    'SELECT * FROM users WHERE email = ? AND password = ?',
-    [email, password],
-    (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (results.length === 0) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-      res.json(results[0]);
-    }
-  );
-} );
+app.post('/auth/register', (req, res) => {
+  const { name, email, password, inviteCode } = req.body;
+
+  // Smart Role Mapping
+  const roleMap = {
+    'CH-TAILOR': 'Tailor',
+    'CH-ADMIN': 'Admin',
+    'CH-DELIVERY': 'Delivery',
+    'CH-EMB': 'Embroidery'
+  };
+
+  const assignedRole = roleMap[inviteCode.toUpperCase()];
+
+  if (!assignedRole) {
+    return res.status(400).json({ error: "Invalid Staff Invitation Code" });
+  }
+
+  const sql = 'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)';
+  db.query(sql, [name, email, password, assignedRole], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, role: assignedRole });
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0' ,() => console.log(`CHUMS API running on port ${PORT}`));
