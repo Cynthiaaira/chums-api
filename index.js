@@ -155,12 +155,18 @@ app.put('/tasks/:id', (req, res) => {
 //  Auth
 app.post('/auth/login', (req, res) => {
   const { username, password } = req.body;
+/// remember to removethis
+console.log('Received:', {userName,password});
+console.log('Types:', typeof userName, typeof password);
 
   db.query(
     'SELECT * FROM users WHERE userName = ? AND password = ?',
     [username, password],
     (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
+
+/// remember to remove this
+console.log('Results found:', results.length);
 
       if (results.length === 0) {
         return res.status(401).json({ error: 'Invalid credentials' });
