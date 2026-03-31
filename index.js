@@ -186,7 +186,7 @@ db.query(sql, [token, email], (err, result) => {
   const resetLink = `https://chums-api-production.up.railway.app/reset/${token}`;
 
     const mailOptions = {
-      from: '"CHUMS System" <your-email@gmail.com>',
+      from: '"CHUMS System" <cynthiaKaira02@gmail.com>',
       to: email,
       subject: 'Password Reset Request',
       text: `You requested a password reset. Click the link to reset your password: ${resetLink}`
