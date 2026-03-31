@@ -179,21 +179,18 @@ const sql ='UPDATE users SET resetToken =?, resetTokenExpiry = DATE_ADD(NOW(), I
 db.query(sql, [token, email],async (err, result) => {
   if(err) return res.status(500).json({error: err.message});
   if(result.affectedRows === 0) return res.status(404).json({error: "User not found"});
-
-      const resetLink = `https://chums-api-production.up.railway.app/reset/${token}`;
-
     try {
       await resend.emails.send({
       from: 'CHUMS System <onboarding@resend.dev>',
       to: email,
       subject: 'Password Reset Request',
-      text: `You requested a password reset.\n\nYour reset token is: ${token}\n\nOr click the link: ${resetLink}\n\nThis token expires in 1 hour.`,
+      text: `You requested a password reset.\n\nYour reset token is: ${token}\n\nThis token expires in 1 hour.`,
       });
-      res.json({ message: 'Reset token sent to email', token: token});
+      res.json({ message: 'Reset token sent to email'});
   } catch(error)
   {
     console.error('Resend error:', error);
-    res.json({message: 'Email failed but here is your token', token: token});
+    res.status(500).json({error: 'Failed to send email.Try again.'});
 }
 });
 });
