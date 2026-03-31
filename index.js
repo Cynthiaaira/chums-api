@@ -26,11 +26,16 @@ db.getConnection((err, connection) => {
 });
 /// mailer configuration
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+/// added this
+host : 'smtp.gmail.com',
+port: 587,
+secure: false,
+  /// removed this
   auth: {
     user: 'cynthiakaira02@gmail.com',
     pass: 'nfbc prfp bkcv hyni'
-  }
+  },
+  tls: {rejectUnauthorized:false}
 });
 // ── Users ────────────────────────────────────────────
 app.get('/users', (req, res) => {
@@ -183,9 +188,22 @@ db.query(sql, [token, email], (err, result) => {
   if(err) return res.status(500).json({error: err.message});
   if(result.affectedRows === 0) return res.status(404).json({error: "User not found"});
 
+        const resetLink = `https://chums-api-production.up.railway.app/reset/${token}`;
 
-      res.json({ message: 'Reset link sent to email', token: token, resetLink: 'https://chums-api-production.up.railway.app/reset/${token}' });
+    const mailOptions = {
+      from: '"CHUMS System" <cynthiaKaira02@gmail.com>',
+      to: email,
+      subject: 'Password Reset Request',
+      text: `You requested a password reset.\n\nYour reset token is: ${token}\n\nOr click the link: ${resetLink}\n\nThis token expires in 1 hour.`
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) { 
+        console.error('Email error:', error);
+        return res.json({ message: 'Email failed but here is your token', token: token});
+      } 
+      res.json({ message: 'Reset token sent to email', token: token});
     });
+});
 });
 
 ///reset password- updated
