@@ -157,7 +157,7 @@ app.post('/auth/login', (req, res) => {
   const { username, password } = req.body;
 
   db.query(
-    'SELECT * FROM users WHERE name = ? AND password = ?',
+    'SELECT * FROM users WHERE userName = ? AND password = ?',
     [username, password],
     (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -212,7 +212,7 @@ app.post('/auth/reset-password', (req, res) => {
 
 /// existiing log in route
 app.post('/auth/register', (req, res) => {
-  const { name, email, password, inviteCode } = req.body;
+  const { firstName, lastName, userName, email, phone, password, inviteCode } = req.body;
 
   const roleMap = {
     'CH-TAILOR': 'Tailor',
@@ -232,12 +232,11 @@ app.post('/auth/register', (req, res) => {
   // Generate Staff ID automatically
   const staffId = 'CH-' + Math.floor(1000 + Math.random() * 9000);
 
-  const sql = `
-    INSERT INTO user (name, email, password, role, staffId)
-    VALUES (?, ?, ?, ?, ?)
-  `;
-
-  db.query(sql, [name, email, password, assignedRole, staffId], (err, result) => {
+  db.query(
+     `INSERT INTO users (firstName, lastName, userName, email, phone, password, role, role, staffId)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?) `,
+  [firstName, lastName, userName, email, phone, password, assignedRole, staffId],
+   (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
 
     res.json({
@@ -245,7 +244,8 @@ app.post('/auth/register', (req, res) => {
       role: assignedRole,
       staffId: staffId
     });
-  });
+  }
+);
 });
 
 const PORT = process.env.PORT || 3000;
