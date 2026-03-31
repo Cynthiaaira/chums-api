@@ -183,20 +183,11 @@ db.query(sql, [token, email], (err, result) => {
   if(err) return res.status(500).json({error: err.message});
   if(result.affectedRows === 0) return res.status(404).json({error: "User not found"});
 
-  const resetLink = `https://chums-api-production.up.railway.app/reset/${token}`;
 
-    const mailOptions = {
-      from: '"CHUMS System" <cynthiaKaira02@gmail.com>',
-      to: email,
-      subject: 'Password Reset Request',
-      text: `You requested a password reset. Click the link to reset your password: ${resetLink}`
-    };
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) return res.status(500).json({ error: error.message });
-      res.json({ message: 'Reset link sent to email' });
+      res.json({ message: 'Reset link sent to email', token: token, resetLink: 'https://chums-api-production.up.railway.app/reset/${token}' });
     });
 });
-});
+
 ///reset password- updated
 app.post('/auth/reset-password', (req, res) => {
   const { token, newPassword } = req.body;
