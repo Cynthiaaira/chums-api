@@ -1,8 +1,9 @@
 const express = require('express');
 const mysql   = require('mysql2');
 const cors    = require('cors');
-const nodemailer = require('nodemailer');
+const {Resend} = require('resend');
 const crypto = require ('crypto');
+const { error } = require('console');
 
 const app = express();
 app.use(cors());
@@ -25,19 +26,10 @@ db.getConnection((err, connection) => {
   }
 });
 /// mailer configuration
-const transporter = nodemailer.createTransport({
-/// added this
-host : 'smtp.gmail.com',
-port: 587,
-secure: false,
-  /// removed this
-  auth: {
-    user: 'cynthiakaira02@gmail.com',
-    pass: 'nfbc prfp bkcv hyni'
-  },
-  tls: {rejectUnauthorized:false}
-});
-// ── Users ────────────────────────────────────────────
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+
+//  Users 
 app.get('/users', (req, res) => {
   db.query('SELECT * FROM users', (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -109,7 +101,7 @@ app.post('/customers', (req, res) => {
   );
 });
 
-// ── Invoices ─────────────────────────────────────────
+// ── Invoices 
 app.get('/invoices', (req, res) => {
   db.query('SELECT * FROM invoices', (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -129,7 +121,7 @@ app.post('/invoices', (req, res) => {
   );
 });
 
-// ── Orders ───────────────────────────────────────────
+// ── Orders
 app.get('/orders', (req, res) => {
   db.query('SELECT * FROM orders', (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -184,25 +176,25 @@ app.post('/auth/forgot-password', (req, res) =>{
 // update user with token and 1 hour expiry
 const sql ='UPDATE users SET resetToken =?, resetTokenExpiry = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE email = ?';
 
-db.query(sql, [token, email], (err, result) => {
+db.query(sql, [token, email],async (err, result) => {
   if(err) return res.status(500).json({error: err.message});
   if(result.affectedRows === 0) return res.status(404).json({error: "User not found"});
 
-        const resetLink = `https://chums-api-production.up.railway.app/reset/${token}`;
+      const resetLink = `https://chums-api-production.up.railway.app/reset/${token}`;
 
-    const mailOptions = {
-      from: '"CHUMS System" <cynthiaKaira02@gmail.com>',
+    try {
+      await resend.emails.send({
+      from: 'CHUMS System <onboarding@resend.dev>',
       to: email,
       subject: 'Password Reset Request',
-      text: `You requested a password reset.\n\nYour reset token is: ${token}\n\nOr click the link: ${resetLink}\n\nThis token expires in 1 hour.`
-    };
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) { 
-        console.error('Email error:', error);
-        return res.json({ message: 'Email failed but here is your token', token: token});
-      } 
+      text: `You requested a password reset.\n\nYour reset token is: ${token}\n\nOr click the link: ${resetLink}\n\nThis token expires in 1 hour.`,
+      });
       res.json({ message: 'Reset token sent to email', token: token});
-    });
+  } catch(error)
+  {
+    console.error('Resend error:', error);
+    res.json({message: 'Email failed but here is your token', token: token});
+}
 });
 });
 
