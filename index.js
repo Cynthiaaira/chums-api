@@ -210,7 +210,7 @@ app.post('/auth/reset-password', (req, res) => {
   });
 });
 
-/// existiing log in route
+/// existiing register route
 app.post('/auth/register', (req, res) => {
   const { firstName, lastName, userName, email, phone, password, inviteCode } = req.body;
 
@@ -233,7 +233,7 @@ app.post('/auth/register', (req, res) => {
   const staffId = 'CH-' + Math.floor(1000 + Math.random() * 9000);
 
   db.query(
-     `INSERT INTO users (firstName, lastName, userName, email, phone, password, role, role, staffId)
+     `INSERT INTO users (firstName, lastName, userName, email, phone, password, role, staffId)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?) `,
   [firstName, lastName, userName, email, phone, password, assignedRole, staffId],
    (err, result) => {
