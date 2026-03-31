@@ -154,14 +154,14 @@ app.put('/tasks/:id', (req, res) => {
 
 //  Auth
 app.post('/auth/login', (req, res) => {
-  const { username, password } = req.body;
+  const { userName, password } = req.body;
 /// remember to removethis
 console.log('Received:', {userName,password});
 console.log('Types:', typeof userName, typeof password);
 
   db.query(
     'SELECT * FROM users WHERE userName = ? AND password = ?',
-    [username, password],
+    [userName, password],
     (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
 
