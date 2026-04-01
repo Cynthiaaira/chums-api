@@ -297,8 +297,7 @@ app.post('/auth/register', (req, res) => {
     });
   }
 );
-}); /// fresh build
-/// fresh build
+}); 
 /// fresh build
 
 const PORT = process.env.PORT || 3000;
