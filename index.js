@@ -147,16 +147,6 @@ app.put('/tasks/:id', (req, res) => {
     }
   );
 });
-/// put order
-app.put('/orders/:id',async(req, res) => {
-  const {id} = req.params;
-  const{category, style, tailor, quantity, waist, length, color, pickupDate, status} = req.body;
-  const result = await pool.query(
-    `UPDATE orders SET category=$1, style=$2, tailor=$3, quantity=$4, waist=$5, length=$6, color=$7, pickup_Date=$8,status=$9 WHERE id=$10 RETURNING*`,
-    [category,style, tailor, quantity, waist, length,color, pickupDate,status, id]
-  );
-  res.json(result.rows[0]);
-});
 /// post orders 
 app.post('/orders', async(req, rees) => {
   const{customerId, customerName, category, style, tailor, quantity, waist, length, color, pickupDate, status} = req.body;
