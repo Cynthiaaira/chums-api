@@ -122,11 +122,12 @@ app.post('/invoices', (req, res) => {
 });
 
 // Get Orders
-app.get('/orders',async (req, res) => {
-  const results = await pool.quesry('SELECT * FROM orders ORDER BY id DESC');
-  res.json(result.rows);
+app.get('/orders', (req, res) => {
+  db.query('SELECT * FROM orders ORDER BY id DESC', (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
 });
-
 
 // ── Tasks / Work Distribution ─────────────────────────
 app.get('/tasks', (req, res) => {
@@ -148,14 +149,57 @@ app.put('/tasks/:id', (req, res) => {
   );
 });
 /// post orders 
-app.post('/orders', async(req, rees) => {
-  const{customerId, customerName, category, style, tailor, quantity, waist, length, color, pickupDate, status} = req.body;
-  const result = await pool.query(
-    `INSERT INTO orders (customer_id, customer_name, category, style, tailor, quantity, waist, length, color, pickupdate, status, created_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW()) RETURNING *`,
-    [customerId,customerName, category,style,tailor,quantity,waist,length,color,pickupDate,status?? 'Assigned']
+app.post('/orders', (req, res) => {
+  const { customerName, phone, category, style, tailor, quantity, waist, length, color, pickupDate, status } = req.body;
+  db.query(
+    'INSERT INTO orders (customerName, phone, category, style, tailor, quantity, waist, length, color, pickupDate, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [customerName, phone, category, style, tailor, quantity, waist, length, color, pickupDate, status ?? 'Assigned'],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: result.insertId });
+    }
   );
-  res.json(result.rows[0]);
+});
+
+/// post multiple order items
+app.post('/orders/bulk', (req, res) => {
+  const { customerName, phone, tailor, pickupDate, items } = req.body;
+
+  if (!items || items.length === 0) {
+    return res.status(400).json({ error: 'No items provided' });
+  }
+/// each item is inserted as a separate row
+const values = items.map(item => [
+    customerName, phone, item.category, item.style,
+    tailor, item.quantity, item.waist, item.length,
+    item.color, pickupDate, 'Assigned'
+  ]);
+
+  const placeholders = values.map(() =>
+    '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).join(', ');
+
+  const flatValues = values.flat();
+
+  db.query(
+    `INSERT INTO orders (customerName, phone, category, style, tailor, quantity, waist, length, color, pickupDate, status) VALUES ${placeholders}`,
+    flatValues,
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, inserted: result.affectedRows });
+    }
+  );
+});
+
+/// get tailors and embroidery staff
+app.get('/users/staff', (req, res) => {
+  db.query(
+    "SELECT id, userName, firstName, lastName, role FROM users WHERE role IN ('Tailor', 'Embroidery')",
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    }
+  );
 });
 //  Auth
 app.post('/auth/login', (req, res) => {
