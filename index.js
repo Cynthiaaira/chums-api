@@ -191,6 +191,31 @@ const values = items.map(item => [
   );
 });
 
+/// update order
+app.put('/orders/:id', (req, res) => {
+  const { tailor, pickupDate, quantity } = req.body;
+  db.query(
+    'UPDATE orders SET tailor = ?, pickupDate = ?, quantity = ? WHERE id = ?',
+    [tailor, pickupDate, quantity, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+/// delete single order by id
+app.delete('/orders/:id', (req, res) => {
+  db.query(
+    'DELETE FROM orders WHERE id = ?',
+    [req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
 /// get tailors and embroidery staff
 app.get('/users/staff', (req, res) => {
   db.query(
