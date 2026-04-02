@@ -302,6 +302,20 @@ app.delete('/customers/:id', (req, res) => {
   );
 });
 
+
+/// put change to save customer history
+app.put('/customers/:id', (req, res) => {
+  const { name, phone, lastEditedBy, lastEditedAt, changeNote } = req.body;
+  db.query(
+    'UPDATE customers SET name = ?, phone = ?, lastEditedBy = ?, lastEditedAt = ?, changeNote = ? WHERE id = ?',
+    [name, phone, lastEditedBy, lastEditedAt, changeNote, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
 //  Auth
 app.post('/auth/login', (req, res) => {
   const { userName, password } = req.body;
