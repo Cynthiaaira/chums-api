@@ -148,6 +148,32 @@ app.put('/tasks/:id', (req, res) => {
     }
   );
 });
+
+/// update user role
+app.put('/users/:id/role', (req, res) => {
+  const { role } = req.body;
+  db.query(
+    'UPDATE users SET role = ? WHERE id = ?',
+    [role, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+/// delete user
+app.delete('/users/:id', (req, res) => {
+  db.query(
+    'DELETE FROM users WHERE id = ?',
+    [req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
 /// post orders 
 app.post('/orders', (req, res) => {
   const { customerName, phone, category, style, tailor, quantity, waist, length, color, pickupDate, status } = req.body;
