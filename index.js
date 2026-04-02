@@ -191,30 +191,54 @@ app.post('/orders', (req, res) => {
 app.post('/orders/bulk', (req, res) => {
   const { customerName, phone, tailor, pickupDate, items } = req.body;
 
-  if (!items || items.length === 0) {
-    return res.status(400).json({ error: 'No items provided' });
+   try {
+    // Check if customer exists
+    db.query(
+      'SELECT id FROM customers WHERE phone = ?',
+      [phone],
+      (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const createOrders = (customerId) => {
+          const values = items.map(item => [
+            customerId, customerName, phone, item.category, item.style,
+            tailor, item.quantity, item.waist, item.length,
+            item.color, pickupDate, 'Assigned'
+          ]);
+
+          const placeholders = values.map(() =>
+            '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          ).join(', ');
+
+          db.query(
+            `INSERT INTO orders (customerId, customerName, phone, category, style, tailor, quantity, waist, length, color, pickupDate, status) VALUES ${placeholders}`,
+            values.flat(),
+            (err, result) => {
+              if (err) return res.status(500).json({ error: err.message });
+              res.json({ success: true, inserted: result.affectedRows });
+            }
+          );
+        };
+
+        if (results.length > 0) {
+          // Customer exists — use their id
+          createOrders(results[0].id);
+        } else {
+          // Customer doesn't exist — create them first
+          db.query(
+            'INSERT INTO customers (name, phone) VALUES (?, ?)',
+            [customerName, phone],
+            (err, result) => {
+              if (err) return res.status(500).json({ error: err.message });
+              createOrders(result.insertId);
+            }
+          );
+        }
+      }
+    );
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
-/// each item is inserted as a separate row
-const values = items.map(item => [
-    customerName, phone, item.category, item.style,
-    tailor, item.quantity, item.waist, item.length,
-    item.color, pickupDate, 'Assigned'
-  ]);
-
-  const placeholders = values.map(() =>
-    '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).join(', ');
-
-  const flatValues = values.flat();
-
-  db.query(
-    `INSERT INTO orders (customerName, phone, category, style, tailor, quantity, waist, length, color, pickupDate, status) VALUES ${placeholders}`,
-    flatValues,
-    (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, inserted: result.affectedRows });
-    }
-  );
 });
 
 /// update order
@@ -252,6 +276,32 @@ app.get('/users/staff', (req, res) => {
     }
   );
 });
+
+/// update customer
+app.put('/customers/:id', (req, res) => {
+  const { name, phone } = req.body;
+  db.query(
+    'UPDATE customers SET name = ?, phone = ? WHERE id = ?',
+    [name, phone, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+/// delete customer
+app.delete('/customers/:id', (req, res) => {
+  db.query(
+    'DELETE FROM customers WHERE id = ?',
+    [req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
 //  Auth
 app.post('/auth/login', (req, res) => {
   const { userName, password } = req.body;
