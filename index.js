@@ -277,19 +277,6 @@ app.get('/users/staff', (req, res) => {
   );
 });
 
-/// update customer
-app.put('/customers/:id', (req, res) => {
-  const { name, phone } = req.body;
-  db.query(
-    'UPDATE customers SET name = ?, phone = ? WHERE id = ?',
-    [name, phone, req.params.id],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
-    }
-  );
-});
-
 /// delete customer
 app.delete('/customers/:id', (req, res) => {
   db.query(
@@ -313,7 +300,7 @@ app.put('/customers/:id', (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
 
       db.query(
-        'UPDATE orders SET customerName = ?, phone = ? WHERE cusomerId = ?',
+        'UPDATE orders SET customerName = ?, phone = ? WHERE customerId = ?',
         [name, phone, req.params.id],
         (err) => {
           if (err) return res.status(500).json({error:err.message});
