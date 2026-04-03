@@ -319,6 +319,18 @@ app.delete('/orders/:id', (req, res) => {
   );
 });
 
+/// delete stock
+app.delete('/stock/:id', (req, res) => {
+  db.query(
+    'DELETE FROM stock WHERE id = ?',
+    [req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
 /// AUTH routes
 
 //  Auth
