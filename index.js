@@ -226,7 +226,7 @@ app.put('/stock/:id', (req, res) => {
 app.put('/customers/:id', (req, res) => {
   const { name, phone, lastEditedBy, lastEditedAt, changeNote } = req.body;
   db.query(
-    'UPDATE customers SET name = ?, phone = ?, lastEditedBy = ?, lastEditedAt = ?, changeNote = ? WHERE id = ?',
+    'UPDATE customers SET name = ?, phone = ?, lastEditedBy = ?, lastEditAt = ?, changeNote = ? WHERE id = ?',
     [name, phone, lastEditedBy, lastEditedAt, changeNote, req.params.id],
     (err) => {
       if (err) return res.status(500).json({ error: err.message });
