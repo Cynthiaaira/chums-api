@@ -161,8 +161,8 @@ app.post('/orders/bulk', (req, res) => {
    try {
     // Check if customer exists
     db.query(
-      'SELECT id FROM customers WHERE phone = ?',
-      [phone],
+      'SELECT id FROM customers WHERE name = ? AND phone = ?',
+      [customerName, phone],
       (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
 
