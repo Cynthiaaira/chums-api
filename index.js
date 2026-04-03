@@ -311,7 +311,15 @@ app.put('/customers/:id', (req, res) => {
     [name, phone, lastEditedBy, lastEditedAt, changeNote, req.params.id],
     (err) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
+
+      db.query(
+        'UPDATE orders SET customerName = ?, phone = ? WHERE cusomerId = ?',
+        [name, phone, req.params.id],
+        (err) => {
+          if (err) return res.status(500).json({error:err.message});
+            res.json({ success: true });
+        }
+      );
     }
   );
 });
