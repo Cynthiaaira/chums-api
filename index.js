@@ -29,6 +29,9 @@ db.getConnection((err, connection) => {
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 
+/// GET routes
+
+
 //  Users 
 app.get('/users', (req, res) => {
   db.query('SELECT * FROM users', (err, results) => {
@@ -36,6 +39,59 @@ app.get('/users', (req, res) => {
     res.json(results);
   });
 });
+
+/// get tailors and embroidery staff
+app.get('/users/staff', (req, res) => {
+  db.query(
+    "SELECT id, userName, firstName, lastName, role FROM users WHERE role IN ('Tailor', 'Embroidery')",
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    }
+  );
+});
+
+/// Stock 
+app.get('/stock', (req, res) => {
+  db.query('SELECT * FROM stock', (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+///  Customers 
+app.get('/customers', (req, res) => {
+  db.query('SELECT * FROM customers', (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+///  Invoices 
+app.get('/invoices', (req, res) => {
+  db.query('SELECT * FROM invoices', (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+/// Get Orders
+app.get('/orders', (req, res) => {
+  db.query('SELECT * FROM orders ORDER BY id DESC', (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+/// Tasks / Work Distribution 
+app.get('/tasks', (req, res) => {
+  db.query('SELECT * FROM tasks', (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+/// POST routes
 
 app.post('/users', (req, res) => {
   const { name, email, role, staffId } = req.body;
@@ -47,14 +103,6 @@ app.post('/users', (req, res) => {
       res.json({ id: result.insertId });
     }
   );
-});
-
-// ── Stock ────────────────────────────────────────────
-app.get('/stock', (req, res) => {
-  db.query('SELECT * FROM stock', (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
 });
 
 app.post('/stock', (req, res) => {
@@ -69,26 +117,6 @@ app.post('/stock', (req, res) => {
   );
 });
 
-app.put('/stock/:id', (req, res) => {
-  const { quantity } = req.body;
-  db.query(
-    'UPDATE stock SET quantity = ? WHERE id = ?',
-    [quantity, req.params.id],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
-    }
-  );
-});
-
-// ── Customers ────────────────────────────────────────
-app.get('/customers', (req, res) => {
-  db.query('SELECT * FROM customers', (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
-});
-
 app.post('/customers', (req, res) => {
   const { name, phone } = req.body;
   db.query(
@@ -101,14 +129,6 @@ app.post('/customers', (req, res) => {
   );
 });
 
-// ── Invoices 
-app.get('/invoices', (req, res) => {
-  db.query('SELECT * FROM invoices', (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
-});
-
 app.post('/invoices', (req, res) => {
   const { customerId, amount, status, date, dueDate } = req.body;
   db.query(
@@ -117,59 +137,6 @@ app.post('/invoices', (req, res) => {
     (err, result) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ id: result.insertId });
-    }
-  );
-});
-
-// Get Orders
-app.get('/orders', (req, res) => {
-  db.query('SELECT * FROM orders ORDER BY id DESC', (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
-});
-
-// ── Tasks / Work Distribution ─────────────────────────
-app.get('/tasks', (req, res) => {
-  db.query('SELECT * FROM tasks', (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
-});
-
-app.put('/tasks/:id', (req, res) => {
-  const { completed } = req.body;
-  db.query(
-    'UPDATE tasks SET completed = ? WHERE id = ?',
-    [completed, req.params.id],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
-    }
-  );
-});
-
-/// update user role
-app.put('/users/:id/role', (req, res) => {
-  const { role } = req.body;
-  db.query(
-    'UPDATE users SET role = ? WHERE id = ?',
-    [role, req.params.id],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
-    }
-  );
-});
-
-/// delete user
-app.delete('/users/:id', (req, res) => {
-  db.query(
-    'DELETE FROM users WHERE id = ?',
-    [req.params.id],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
     }
   );
 });
@@ -241,54 +208,19 @@ app.post('/orders/bulk', (req, res) => {
   }
 });
 
-/// update order
-app.put('/orders/:id', (req, res) => {
-  const { tailor, pickupDate, quantity } = req.body;
+/// PUT routes
+
+app.put('/stock/:id', (req, res) => {
+  const { quantity } = req.body;
   db.query(
-    'UPDATE orders SET tailor = ?, pickupDate = ?, quantity = ? WHERE id = ?',
-    [tailor, pickupDate, quantity, req.params.id],
+    'UPDATE stock SET quantity = ? WHERE id = ?',
+    [quantity, req.params.id],
     (err) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true });
     }
   );
 });
-
-/// delete single order by id
-app.delete('/orders/:id', (req, res) => {
-  db.query(
-    'DELETE FROM orders WHERE id = ?',
-    [req.params.id],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
-    }
-  );
-});
-
-/// get tailors and embroidery staff
-app.get('/users/staff', (req, res) => {
-  db.query(
-    "SELECT id, userName, firstName, lastName, role FROM users WHERE role IN ('Tailor', 'Embroidery')",
-    (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(results);
-    }
-  );
-});
-
-/// delete customer
-app.delete('/customers/:id', (req, res) => {
-  db.query(
-    'DELETE FROM customers WHERE id = ?',
-    [req.params.id],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
-    }
-  );
-});
-
 
 /// put change to save customer history
 app.put('/customers/:id', (req, res) => {
@@ -311,6 +243,84 @@ app.put('/customers/:id', (req, res) => {
   );
 });
 
+/// update order
+app.put('/orders/:id', (req, res) => {
+  const { tailor, pickupDate, quantity } = req.body;
+  db.query(
+    'UPDATE orders SET tailor = ?, pickupDate = ?, quantity = ? WHERE id = ?',
+    [tailor, pickupDate, quantity, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+app.put('/tasks/:id', (req, res) => {
+  const { completed } = req.body;
+  db.query(
+    'UPDATE tasks SET completed = ? WHERE id = ?',
+    [completed, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+/// update user role
+app.put('/users/:id/role', (req, res) => {
+  const { role } = req.body;
+  db.query(
+    'UPDATE users SET role = ? WHERE id = ?',
+    [role, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+/// DELETE routes
+
+/// delete user
+app.delete('/users/:id', (req, res) => {
+  db.query(
+    'DELETE FROM users WHERE id = ?',
+    [req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+/// delete customer
+app.delete('/customers/:id', (req, res) => {
+  db.query(
+    'DELETE FROM customers WHERE id = ?',
+    [req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+/// delete single order by id
+app.delete('/orders/:id', (req, res) => {
+  db.query(
+    'DELETE FROM orders WHERE id = ?',
+    [req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+/// AUTH routes
+
 //  Auth
 app.post('/auth/login', (req, res) => {
   const { userName, password } = req.body;
@@ -330,6 +340,44 @@ app.post('/auth/login', (req, res) => {
     }
   );
 });
+
+/// existiing register route or sign up
+app.post('/auth/register', (req, res) => {
+  const { firstName, lastName, userName, email, phone, password, inviteCode } = req.body;
+
+  const roleMap = {
+    'CH-TAILOR': 'Tailor',
+    'CH-ADMIN': 'Admin',
+    'CH-DELIVERY': 'Delivery',
+    'CH-EMB': 'Embroidery',
+    'CH-SALES': 'Sales',
+    'CH-PACK': 'Packaging'
+  };
+
+  const assignedRole = roleMap[inviteCode.toUpperCase()];
+
+  if (!assignedRole) {
+    return res.status(400).json({ error: "Invalid Staff Invitation Code" });
+  }
+
+  // Generate Staff ID automatically
+  const staffId = 'CH-' + Math.floor(1000 + Math.random() * 9000);
+
+  db.query(
+     `INSERT INTO users (firstName, lastName, userName, email, phone, password, role, staffId)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?) `,
+  [firstName, lastName, userName, email, phone, password, assignedRole, staffId],
+   (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    res.json({
+      success: true,
+      role: assignedRole,
+      staffId: staffId
+    });
+  }
+);
+}); 
 
 /// forgot password
 app.post('/auth/forgot-password', (req, res) =>{
@@ -371,43 +419,7 @@ app.post('/auth/reset-password', (req, res) => {
   });
 });
 
-/// existiing register route or sign up
-app.post('/auth/register', (req, res) => {
-  const { firstName, lastName, userName, email, phone, password, inviteCode } = req.body;
 
-  const roleMap = {
-    'CH-TAILOR': 'Tailor',
-    'CH-ADMIN': 'Admin',
-    'CH-DELIVERY': 'Delivery',
-    'CH-EMB': 'Embroidery',
-    'CH-SALES': 'Sales',
-    'CH-PACK': 'Packaging'
-  };
-
-  const assignedRole = roleMap[inviteCode.toUpperCase()];
-
-  if (!assignedRole) {
-    return res.status(400).json({ error: "Invalid Staff Invitation Code" });
-  }
-
-  // Generate Staff ID automatically
-  const staffId = 'CH-' + Math.floor(1000 + Math.random() * 9000);
-
-  db.query(
-     `INSERT INTO users (firstName, lastName, userName, email, phone, password, role, staffId)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?) `,
-  [firstName, lastName, userName, email, phone, password, assignedRole, staffId],
-   (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    res.json({
-      success: true,
-      role: assignedRole,
-      staffId: staffId
-    });
-  }
-);
-}); 
 /// fresh build
 /// fresh build
 /// fresh build
