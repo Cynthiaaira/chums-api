@@ -197,7 +197,7 @@ app.post('/orders/bulk', (req, res) => {
 
               /// find tailors's useId and create notifications
               db.query(
-                'SELECY id FROM users WHERE userName = ?',
+                'SELECT id FROM users WHERE userName = ?',
                 [tailor],
                 (err, tailorResults) => {
                   if(!err && tailorResults.length > 0) {
