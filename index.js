@@ -91,6 +91,18 @@ app.get('/tasks', (req, res) => {
   });
 });
 
+/// notifications for a user
+app.get('/notifications/:userId', (req, res) => {
+  db.query(
+    'SELECT * FROM notifications WHERE userId = ? ORDER BY createdAt DESC',
+    [req.params.userId],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    }
+  );
+});
+
 /// POST routes
 
 app.post('/users', (req, res) => {
@@ -182,7 +194,26 @@ app.post('/orders/bulk', (req, res) => {
             values.flat(),
             (err, result) => {
               if (err) return res.status(500).json({ error: err.message });
-              res.json({ success: true, inserted: result.affectedRows });
+
+              /// find tailors's useId and create notifications
+              db.query(
+                'SELECY id FROM users WHERE userName = ?',
+                [tailor],
+                (err, tailorResults) => {
+                  if(!err && tailorResults.length > 0) {
+                    const tailorId = tailorResults[0].id;
+                    const itemSummary = items.map(i => `${i.category} (${i.style}) x${i.quantity}`).join(',');
+                    const message =  `New order from ${customerName}:\n${itemSummary}\nPickup: ${pickupDate ?? 'TBD'}`;
+
+                    db.query(
+                      'INSERT INTO notifications (userId, title, message) VALUES (?, ?, ?)',
+                      [tailorId, 'New order Assigned', message],
+                      () => {}
+                    );
+                  }
+                  res.json({ success: true, inserted: result.affectedRows });
+                }
+              );
             }
           );
         };
@@ -206,6 +237,19 @@ app.post('/orders/bulk', (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+/// Create notification
+app.post('/notifications', (req, res) => {
+  const { userId, title, message } = req.body;
+  db.query(
+    'INSERT INTO notifications (userId, title, message) VALUES (?, ?, ?)',
+    [userId, title, message],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: result.insertId });
+    }
+  );
 });
 
 /// PUT routes
@@ -280,6 +324,31 @@ app.put('/users/:id/role', (req, res) => {
     }
   );
 });
+
+// Mark single notification as read
+app.put('/notifications/:id/read', (req, res) => {
+  db.query(
+    'UPDATE notifications SET isRead = 1 WHERE id = ?',
+    [req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+// Mark all notifications as read
+app.put('/notifications/:userId/readall', (req, res) => {
+  db.query(
+    'UPDATE notifications SET isRead = 1 WHERE userId = ?',
+    [req.params.userId],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
 
 /// DELETE routes
 
